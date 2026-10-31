@@ -79,7 +79,30 @@ export const createPlanta = async (req: Request, res: Response) => {
 
 export const readAllPlantas = async (req: Request, res: Response) => {
   try {
-    const plantas = await PlantaRepository.findAllPlantas();
+    const { luminosidade, petFriendly } = req.query;
+
+    // 400 se a luminosidade foi enviada e não é um valor do enum
+    if (luminosidade !== undefined && !Object.values(Luminosidade).includes(luminosidade as Luminosidade)) {
+        return res.status(400).json({message: "A luminosidade deve ser SOMBRA, MEIA_SOMBRA ou SOL_PLENO.",});
+    }
+
+     // 400 se o petFriendly foi enviado e não é "true" nem "false"
+    if (petFriendly !== undefined && petFriendly !== "true" && petFriendly !== "false") {
+        return res.status(400).json({message: "O filtro petFriendly deve ser true ou false.",});
+    }
+
+    // petFriendly de texto para boolean, deixa undefined se o filtro não foi enviado
+    let petFriendlyFiltro: boolean | undefined = undefined;
+    if (petFriendly !== undefined) {
+      petFriendlyFiltro = petFriendly === "true";
+    }
+
+    
+    const plantas = await PlantaRepository.findAllPlantas({
+        luminosidade: luminosidade as Luminosidade | undefined,
+        petFriendly: petFriendlyFiltro,
+        });
+    
 
     return res.status(200).json(plantas);
   } catch (error) {
