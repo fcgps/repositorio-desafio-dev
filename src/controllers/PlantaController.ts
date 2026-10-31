@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Luminosidade } from "@prisma/client";
+import { Luminosidade, Prisma } from "@prisma/client";
 import * as PlantaRepository from "@repositories/PlantaRepository";
 
 // O controller recebe a requisição, valida os dados, chama o repository
@@ -79,7 +79,7 @@ export const createPlanta = async (req: Request, res: Response) => {
 
 export const readAllPlantas = async (req: Request, res: Response) => {
   try {
-    const { luminosidade, petFriendly, nome} = req.query;
+    const { luminosidade, petFriendly, nome, ordem} = req.query;
 
     // 400 se a luminosidade foi enviada e não é um valor do enum
     if (luminosidade !== undefined && !Object.values(Luminosidade).includes(luminosidade as Luminosidade)) {
@@ -97,6 +97,12 @@ export const readAllPlantas = async (req: Request, res: Response) => {
       });
     }
 
+    if (ordem !== undefined && ordem !== "preco" && ordem !== "nome") {
+      return res.status(400).json({
+        message: "O parâmetro ordem deve ser preco ou nome.",
+      });
+    }
+
     
     let petFriendlyFiltro: boolean | undefined = undefined;
     if (petFriendly !== undefined) {
@@ -108,12 +114,21 @@ export const readAllPlantas = async (req: Request, res: Response) => {
         ? { contains: nome.trim(), mode: "insensitive" as const }
         : undefined;
 
+    let orderBy: Prisma.PlantaOrderByWithRelationInput | undefined = undefined;
+    if (ordem === "preco") {
+      orderBy = { preco: "asc" };
+    } else if (ordem === "nome") {
+      orderBy = { nome: "asc" };
+    }
+
     
     const plantas = await PlantaRepository.findAllPlantas({
         luminosidade: luminosidade as Luminosidade | undefined,
         petFriendly: petFriendlyFiltro,
         nome: nomeFiltro,
-        });
+      },
+      orderBy,
+    );
     
 
     return res.status(200).json(plantas);
