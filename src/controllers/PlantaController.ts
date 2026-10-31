@@ -216,3 +216,35 @@ export const deletePlanta = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro ao deletar planta." });
   }
 };
+
+
+export const sellPlanta = async (req: Request, res: Response) => {
+    try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "O id deve ser um inteiro maior ou igual a 1." });
+    }
+
+    const { quantidade } = req.body;
+    if (!(Number.isInteger(quantidade) && quantidade > 0)) {
+      return res.status(400).json({ message: "A quantidade precisa ser um inteiro maior que 0." });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    if (planta.estoque < quantidade) {
+      return res.status(400).json({ message: `Temos só ${planta.estoque} vasos.` });
+    }
+
+    const plantaAtualizada = await PlantaRepository.sellPlanta(id, quantidade);
+
+    return res.status(200).json(plantaAtualizada);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao realizar venda." });
+  }
+};
+
