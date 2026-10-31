@@ -239,9 +239,15 @@ export const sellPlanta = async (req: Request, res: Response) => {
       return res.status(400).json({ message: `Temos só ${planta.estoque} vasos.` });
     }
 
-    const plantaAtualizada = await PlantaRepository.sellPlanta(id, quantidade);
+    const resultado = await PlantaRepository.sellPlanta(id, quantidade);
+    if (resultado.count === 0){
+        return res.status(400).json({ message : "Estoque insuficiente."});
+    }
+
+    const plantaAtualizada = await PlantaRepository.findPlantaById(id);
 
     return res.status(200).json(plantaAtualizada);
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erro ao realizar venda." });
