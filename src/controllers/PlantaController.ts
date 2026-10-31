@@ -2,14 +2,11 @@ import { Request, Response } from "express";
 import { Luminosidade, Prisma } from "@prisma/client";
 import * as PlantaRepository from "@repositories/PlantaRepository";
 
-// O controller recebe a requisição, valida os dados, chama o repository
-// e decide qual status HTTP e qual corpo devolver.
 
 export const createPlanta = async (req: Request, res: Response) => {
   try {
     const { nome, especie, preco, estoque, luminosidade, petFriendly, regaACadaDias }= req.body;
 
-    // 400 Bad Request: o cliente mandou dados incompletos
     if ( nome === undefined || especie === undefined || preco === undefined || estoque === undefined || luminosidade === undefined || petFriendly === undefined || regaACadaDias === undefined) {
         return res.status(400).json({
         message: "Preencha todos os campos (nome, especie, preco, estoque, luminosidade, petFriendly e regaACadaDias).",
@@ -72,7 +69,6 @@ export const createPlanta = async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error(error);
-    // 500 Internal Server Error: o problema foi nosso, não do cliente
     return res.status(500).json({ message: "Erro ao criar planta."});
   }
 };
@@ -81,12 +77,10 @@ export const readAllPlantas = async (req: Request, res: Response) => {
   try {
     const { luminosidade, petFriendly, nome, ordem} = req.query;
 
-    // 400 se a luminosidade foi enviada e não é um valor do enum
     if (luminosidade !== undefined && !Object.values(Luminosidade).includes(luminosidade as Luminosidade)) {
         return res.status(400).json({message: "A luminosidade deve ser SOMBRA, MEIA_SOMBRA ou SOL_PLENO.",});
     }
 
-     // 400 se o petFriendly foi enviado e não é "true" nem "false"
     if (petFriendly !== undefined && petFriendly !== "true" && petFriendly !== "false") {
         return res.status(400).json({message: "O filtro petFriendly deve ser true ou false.",});
     }
@@ -140,7 +134,6 @@ export const readAllPlantas = async (req: Request, res: Response) => {
 
 export const readPlantaById = async (req: Request, res: Response) => {
   try {
-    // O id chega da URL como texto, então convertemos para número
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ message : "O id deve ser um inteiro maior ou igual a 1."});
@@ -148,7 +141,6 @@ export const readPlantaById = async (req: Request, res: Response) => {
 
     const planta = await PlantaRepository.findPlantaById(id);
 
-    // 404 Not Found: o id não existe
     if (!planta) {
       return res.status(404).json({ message: "Planta não encontrada." });
     }
@@ -203,7 +195,7 @@ export const updatePlanta = async (req: Request, res: Response) => {
         return res.status(400).json({message: "O campo regaACadaDias deve ser um inteiro maior ou igual a 1.",});
     }
 
-    // PATCH = atualização parcial: campos não enviados (undefined) não são alterados
+
     const updatedPlanta = await PlantaRepository.updatePlanta(id, {
         nome: nome,
         especie: especie,
@@ -236,7 +228,6 @@ export const deletePlanta = async (req: Request, res: Response) => {
 
     await PlantaRepository.deletePlanta(id);
 
-    // 204 No Content: deu certo e não há nada para devolver
     return res.status(204).send();
   } catch (error) {
     console.error(error);
