@@ -79,7 +79,7 @@ export const createPlanta = async (req: Request, res: Response) => {
 
 export const readAllPlantas = async (req: Request, res: Response) => {
   try {
-    const { luminosidade, petFriendly } = req.query;
+    const { luminosidade, petFriendly, nome} = req.query;
 
     // 400 se a luminosidade foi enviada e não é um valor do enum
     if (luminosidade !== undefined && !Object.values(Luminosidade).includes(luminosidade as Luminosidade)) {
@@ -91,16 +91,28 @@ export const readAllPlantas = async (req: Request, res: Response) => {
         return res.status(400).json({message: "O filtro petFriendly deve ser true ou false.",});
     }
 
-    // petFriendly de texto para boolean, deixa undefined se o filtro não foi enviado
+     if (nome !== undefined && (typeof nome !== "string" || nome.trim() === "")) {
+      return res.status(400).json({
+        message: "O filtro nome deve ser um texto não vazio.",
+      });
+    }
+
+    
     let petFriendlyFiltro: boolean | undefined = undefined;
     if (petFriendly !== undefined) {
       petFriendlyFiltro = petFriendly === "true";
     }
 
+    const nomeFiltro =
+      typeof nome === "string"
+        ? { contains: nome.trim(), mode: "insensitive" as const }
+        : undefined;
+
     
     const plantas = await PlantaRepository.findAllPlantas({
         luminosidade: luminosidade as Luminosidade | undefined,
         petFriendly: petFriendlyFiltro,
+        nome: nomeFiltro,
         });
     
 
